@@ -4,6 +4,7 @@ type Item = { name: string; score: number };
 
 export default function BarChart({ data }: { data: Item[] }) {
   return (
+    
     <Plot
       data={[
         {
@@ -27,5 +28,6 @@ export default function BarChart({ data }: { data: Item[] }) {
       style={{ width: "100%", height: "100%" }}
       config={{ displayModeBar: false, responsive: true }}
     />
+    
   );
 }
