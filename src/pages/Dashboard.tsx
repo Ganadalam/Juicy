@@ -1,6 +1,7 @@
 import { useRecoilState } from "recoil";
 import { selectedCategoryState } from "../store/recoilAtoms";
-import { useRecommendation } from "../hooks/useFetchData";
+import { useRecommendation } from "../hooks/useFetchData"; // 이름 맞추기
+
 import Loader from "../components/common/Loader";
 import BarChart from "../components/charts/BarChart";
 
@@ -8,7 +9,10 @@ const CATEGORIES = ["와인", "음료", "디저트"] as const;
 
 export default function Dashboard() {
   const [category, setCategory] = useRecoilState(selectedCategoryState);
-  const { data, isLoading } = useRecommendation(category);
+
+
+
+const { data, isLoading } = useRecommendation(category, "Margarita");
 
   return (
     <main style={{ padding: "24px" }}>

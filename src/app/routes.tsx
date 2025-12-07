@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import Dashboard from "../pages/Dashboard";
 import Relations from "../pages/Relations";
 import Navbar from "../components/layout/Navbar";
+import Backoffice from "../pages/Backoffice";
 
 export default function AppRoutes() {
   return (
@@ -13,6 +14,8 @@ export default function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/relations" element={<Relations />} />
+        <Route path="/backoffice" element={<Backoffice />} />
+   
       </Routes>
     </BrowserRouter>
   );

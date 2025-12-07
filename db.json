@@ -1,0 +1,10 @@
+{
+  "wines": [
+    { "wine": "Cabernet Sauvignon", "rating": { "average": 4.2 }, "price": 30, "location": "France" },
+    { "wine": "Merlot", "rating": { "average": 3.9 }, "price": 25, "location": "Italy" }
+  ],
+  "liquors": [
+    { "prdtNm": "막걸리", "alcohol": 6, "mnfctArea": "전남", "liquorType": "탁주" },
+    { "prdtNm": "소주", "alcohol": 20, "mnfctArea": "전남", "liquorType": "소주" }
+  ]
+}

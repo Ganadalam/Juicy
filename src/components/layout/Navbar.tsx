@@ -22,6 +22,9 @@ export default function Navbar() {
       <Link to="/" style={active("/")}>Home</Link>
       <Link to="/dashboard" style={active("/dashboard")}>Dashboard</Link>
       <Link to="/relations" style={active("/relations")}>Relations</Link>
+      <Link to="/backoffice" style={active("/backoffice")}>Backoffice</Link>
+  
+  
     </nav>
   );
 }
