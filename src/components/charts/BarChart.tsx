@@ -22,10 +22,10 @@ export default function BarChart({ data }: { data: Item[] }) {
         title: { text: "추천 점수" },
         margin: { t: 48, l: 48, r: 16, b: 48 },
         xaxis: { automargin: true },
-        yaxis: { range: [0, 100] }
+        yaxis: { range: [0, 500] }
       }}
       useResizeHandler
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "70%" }}
       config={{ displayModeBar: false, responsive: true }}
     />
     

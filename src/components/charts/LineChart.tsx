@@ -3,9 +3,17 @@ import * as d3 from "d3";
 
 interface LineChartProps {
   data: { name: string; value: number }[];
+  height?: number;
+  color?: string;
+  pointRadius?: number;
 }
 
-export default function LineChart({ data }: LineChartProps) {
+export default function LineChart({
+  data,
+  height = 300,
+  color = "#ff6600",
+  pointRadius = 4,
+}: LineChartProps) {
   const ref = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -14,14 +22,15 @@ export default function LineChart({ data }: LineChartProps) {
     const svg = d3.select(ref.current);
     svg.selectAll("*").remove();
 
-    const width = 600;
-    const height = 300;
-    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    // 반응형을 위해 width는 부모 컨테이너 크기 기준
+    const width = ref.current?.clientWidth ?? 600;
+    const margin = { top: 20, right: 20, bottom: 60, left: 50 };
 
     const x = d3
       .scalePoint()
       .domain(data.map((d) => d.name))
-      .range([margin.left, width - margin.right]);
+      .range([margin.left, width - margin.right])
+      .padding(0.5);
 
     const y = d3
       .scaleLinear()
@@ -38,7 +47,10 @@ export default function LineChart({ data }: LineChartProps) {
     svg
       .append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x));
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .attr("transform", "rotate(-30)")
+      .style("text-anchor", "end");
 
     // Y축
     svg
@@ -51,20 +63,40 @@ export default function LineChart({ data }: LineChartProps) {
       .append("path")
       .datum(data)
       .attr("fill", "none")
-      .attr("stroke", "#ff6600")
+      .attr("stroke", color)
       .attr("stroke-width", 2)
-      .attr("d", line);
+      .attr("d", line)
+      .attr("stroke-dasharray", function () {
+        const totalLength = (this as SVGPathElement).getTotalLength();
+        return `${totalLength} ${totalLength}`;
+      })
+      .attr("stroke-dashoffset", function () {
+        return (this as SVGPathElement).getTotalLength();
+      })
+      .transition()
+      .duration(1000)
+      .attr("stroke-dashoffset", 0);
 
-    // 점 표시
+    // 점 표시 (애니메이션 포함)
     svg
       .selectAll("circle")
       .data(data)
       .join("circle")
       .attr("cx", (d) => x(d.name)!)
       .attr("cy", (d) => y(d.value))
-      .attr("r", 4)
-      .attr("fill", "#ff6600");
-  }, [data]);
+      .attr("r", 0)
+      .attr("fill", color)
+      .transition()
+      .duration(800)
+      .attr("r", pointRadius);
+  }, [data, height, color, pointRadius]);
 
-  return <svg ref={ref} width={600} height={300}></svg>;
+  return (
+    <svg
+      ref={ref}
+      style={{ width: "100%", height }} // 반응형: 부모 div 기준 100% 폭
+      viewBox={`0 0 600 ${height}`} // 내부 좌표계
+      preserveAspectRatio="xMidYMid meet"
+    ></svg>
+  );
 }

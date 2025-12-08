@@ -3,16 +3,17 @@ import * as d3 from "d3";
 
 interface PieChartProps {
   data: { name: string; value: number }[];
+  onSliceClick?: (name: string) => void; // 클릭 이벤트 전달
 }
 
-export default function PieChart({ data }: PieChartProps) {
+export default function PieChart({ data, onSliceClick }: PieChartProps) {
   const ref = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
     if (!data || data.length === 0) return;
 
     const svg = d3.select(ref.current);
-    svg.selectAll("*").remove(); // 기존 차트 초기화
+    svg.selectAll("*").remove();
 
     const width = 400;
     const height = 300;
@@ -25,25 +26,26 @@ export default function PieChart({ data }: PieChartProps) {
       .innerRadius(0)
       .outerRadius(radius);
 
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${width / 2},${height / 2})`);
+    const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
 
     const arcs = g.selectAll("arc").data(pie(data)).enter().append("g");
 
     arcs
       .append("path")
       .attr("d", arc)
-      .attr("fill", (_, i) => color(String(i)));
+      .attr("fill", (_, i) => color(String(i)))
+      .style("cursor", "pointer")
+      .on("click", (event, d) => {
+        if (onSliceClick) onSliceClick(d.data.name);
+      });
 
-    // 라벨 표시
     arcs
       .append("text")
       .attr("transform", (d) => `translate(${arc.centroid(d)})`)
       .attr("text-anchor", "middle")
       .style("font-size", "12px")
       .text((d) => d.data.name);
-  }, [data]);
+  }, [data, onSliceClick]);
 
   return <svg ref={ref} width={400} height={300}></svg>;
 }
