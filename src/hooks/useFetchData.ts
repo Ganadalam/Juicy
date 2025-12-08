@@ -60,7 +60,11 @@ async function fetchRandomCocktail() {
 }
 
 // 공통 훅
-export function useRecommendation(type: string, query?: string, mode: "name" | "category" | "random" = "name") {
+export function useRecommendation(
+  type: string,
+  query?: string,
+  mode: "name" | "category" | "random" = "name"
+) {
   return useQuery({
     queryKey: [type, query, mode],
     queryFn: async () => {
@@ -70,8 +74,22 @@ export function useRecommendation(type: string, query?: string, mode: "name" | "
         if (mode === "category") return fetchCocktailsByCategory(query ?? "Cocktail");
         if (mode === "random") return fetchRandomCocktail();
       }
+      if (type === "디저트" && query) {
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&json=true&page_size=5`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.products
+          .map((p: any, idx: number) => ({
+            name: p.product_name || `Dessert ${idx + 1}`,
+            sugar: Number(p.nutriments?.["sugars_100g"] ?? 0),
+          }))
+          .filter((d: any) => !isNaN(d.sugar));
+      }
       return [];
     },
     enabled: type === "음식" ? !!query : true,
+    staleTime: 1000 * 60 * 5,   // 5분 동안 fresh
+    gcTime: 1000 * 60 * 30,  // 30분 캐시 유지
   });
 }
+
