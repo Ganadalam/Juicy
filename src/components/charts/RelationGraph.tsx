@@ -10,8 +10,18 @@ interface Link {
   target: string;
   strength?: number;
 }
-
-export default function RelationGraph({ category }: { category: string }) {
+type RecommendationItem = {
+  name: string;
+  score: number;
+  price?: number;
+  link?: string;
+  region?: string;
+};
+interface RelationGraphProps {
+  category: string;
+  recommendations?: RecommendationItem[]; // ✅ 추가
+}
+export default function RelationGraph({ category,  }: { category: string }) {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -130,3 +140,65 @@ export default function RelationGraph({ category }: { category: string }) {
 
   return <svg ref={ref} width={640} height={420} role="img" aria-label="관계 네트워크 그래프" />;
 }
+// //import RelationGraph from "../components/charts/RelationGraph";
+// import { useRecoilValue } from "recoil";
+// import { selectedCategoryState, selectedItemState } from "../store/recoilAtoms";
+// import { useRecommendation } from "../hooks/useFetchData";
+
+// export default function Relations() {
+//   const category = useRecoilValue(selectedCategoryState);
+//   const selectedItem = useRecoilValue(selectedItemState);
+//   const { data, isLoading } = useRecommendation(category, selectedItem);
+
+//   const handleSelectItem = (itemName: string) => {
+//     console.log("사용자가 선택한 추천 아이템:", itemName);
+//     // TODO: 선택한 아이템을 기반으로 다시 추천 API 호출 → 성향 맞춤 추천 확장
+//   };
+
+//   return (
+//     <main style={{ padding: "24px" }}>
+//       <h2>Relation Network</h2>
+//       <p>
+//         Current Category: <strong>{category}</strong>
+//       </p>
+//       <section style={{ marginTop: 16 }}>
+//         <RelationGraph
+//           category={category}
+//           selectedItem={selectedItem}
+//           recommendations={data ?? []}
+//           onSelectItem={handleSelectItem}
+//         />
+
+//         <section style={{ marginTop: 24 }}>
+//           <h3>추천 상품</h3>
+//           {isLoading && <p>불러오는 중...</p>}
+//           {!isLoading && data && data.length === 0 && <p>추천 결과 없음</p>}
+
+//           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+//             {data?.map((r) => (
+//               <a
+//                 key={r.name}
+//                 href={r.link ?? "#"}
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 style={{
+//                   border: "1px solid #ddd",
+//                   borderRadius: 8,
+//                   padding: 12,
+//                   textDecoration: "none",
+//                   color: "inherit",
+//                   background: "#fafafa",
+//                 }}
+//               >
+//                 <strong>{r.name}</strong>
+//                 <p>평점: {r.score}</p>
+//                 <p>가격: {r.price ?? "정보 없음"}</p>
+//                 {r.region && <p>지역: {r.region}</p>}
+//               </a>
+//             ))}
+//           </div>
+//         </section>
+//       </section>
+//     </main>
+//   );
+// }

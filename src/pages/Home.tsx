@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SearchSection } from "../components/common/SearchSection";
+import "./Home.css";
 
 const cache = new Map();
-
 
 export default function Home() {
   const nav = useNavigate();
   const [foods, setFoods] = useState<any[]>([]);
   const [cocktails, setCocktails] = useState<any[]>([]);
-  const [randomCocktail, setRandomCocktail] = useState<any | null>(null);
+  const [randomCocktails, setRandomCocktails] = useState<any[]>([]); // ✅ 배열로 변경
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -17,26 +18,24 @@ export default function Home() {
 
   // 음식 검색
   async function searchFoods(keyword: string = foodKeyword) {
-     if (cache.has(`food-${keyword}`)) {
-    setFoods(cache.get(`food-${keyword}`));
-    return;
-     }
-   try {
+    if (cache.has(`food-${keyword}`)) {
+      setFoods(cache.get(`food-${keyword}`));
+      return;
+    }
+    try {
       setLoading(true);
       const res = await fetch(
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${keyword}&json=true&page_size=10`
       );
       const data = await res.json();
       const results =
-        data.products && data.products.length > 0
-          ? data.products.slice(0, 10).map((p: any) => ({
-              name: p.product_name,
-              calories: p.nutriments?.["energy-kcal_100g"],
-              fat: p.nutriments?.["fat_100g"],
-              protein: p.nutriments?.["proteins_100g"],
-              image: p.image_url,
-            }))
-          : [];
+        data.products?.slice(0, 10).map((p: any) => ({
+          name: p.product_name,
+          calories: p.nutriments?.["energy-kcal_100g"],
+          fat: p.nutriments?.["fat_100g"],
+          protein: p.nutriments?.["proteins_100g"],
+          image: p.image_url,
+        })) || [];
       setFoods(results);
       cache.set(`food-${keyword}`, results);
     } catch (err: any) {
@@ -59,15 +58,13 @@ export default function Home() {
       );
       const data = await res.json();
       const results =
-        data.drinks && data.drinks.length > 0
-          ? data.drinks.slice(0, 10).map((d: any) => ({
-              name: d.strDrink,
-              category: d.strCategory,
-              alcohol: d.strAlcoholic,
-              instructions: d.strInstructions,
-              image: d.strDrinkThumb,
-            }))
-          : [];
+        data.drinks?.slice(0, 10).map((d: any) => ({
+          name: d.strDrink,
+          category: d.strCategory,
+          alcohol: d.strAlcoholic,
+          instructions: d.strInstructions,
+          image: d.strDrinkThumb,
+        })) || [];
       setCocktails(results);
       cache.set(`cocktail-${keyword}`, results);
     } catch (err: any) {
@@ -77,20 +74,21 @@ export default function Home() {
     }
   }
 
-  // 랜덤 칵테일
-  async function fetchRandomCocktail() {
+  // 랜덤 칵테일 여러 개
+  async function fetchRandomCocktails(count: number = 3) {
     try {
-      const res = await fetch(
-        "https://www.thecocktaildb.com/api/json/v1/1/random.php"
+      const promises = Array.from({ length: count }, () =>
+        fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php").then((res) => res.json())
       );
-      const data = await res.json();
-      setRandomCocktail({
+      const results = await Promise.all(promises);
+      const cocktails = results.map((data) => ({
         name: data.drinks[0].strDrink,
         category: data.drinks[0].strCategory,
         alcohol: data.drinks[0].strAlcoholic,
         instructions: data.drinks[0].strInstructions,
         image: data.drinks[0].strDrinkThumb,
-      });
+      }));
+      setRandomCocktails(cocktails);
     } catch (err: any) {
       setError(err.message);
     }
@@ -103,214 +101,130 @@ export default function Home() {
         wine & drink & dessert (score & relation)
       </p>
 
-      {loading && <p>데이터 불러오는 중...</p>}
-      {error && <p style={{ color: "red" }}>에러: {error}</p>}
+      {loading && <div className="spinner">🔄 불러오는 중...</div>}
+      {error && <div style={{ background: "#ffe0e0", padding: 12, borderRadius: 8 }}>에러: {error}</div>}
 
-      
       {/* 음식 검색 */}
-      <section>
-        <h2>🍎 음식 추천</h2>
-        <div style={{ marginBottom: 12 }}>
-          <input
-            value={foodKeyword}
-            onChange={(e) => setFoodKeyword(e.target.value)}
-             onKeyDown={(e) => e.key === "Enter" && searchFoods()}
-            placeholder="음식 검색어 입력 (예: snack, chocolate)"
-            style={{ padding: "8px", borderRadius: 6, border: "1px solid #ccc" }}
-          />
-          <button
-            onClick={() => searchFoods()}
-            style={{
-              marginLeft: 8,
-              padding: "8px 12px",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            검색
-          </button>
-          {/* 추천 키워드 버튼 */}
-          <div style={{ marginTop: 8 }}>
-            {["snack", "chocolate", "pizza", "bread"].map((kw) => (
-              <button
-                key={kw}
-                onClick={() => {
-                  setFoodKeyword(kw);
-                  searchFoods(kw);
-                }}
-                style={{
-                  marginRight: 6,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  background: "#eee",
-                }}
-              >
-                {kw}
-              </button>
-            ))}
-          </div>
-        </div>
-        {foods.length === 0 ? (
-          <p>검색 결과 없음</p>
-        ) : (
-          <ul
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {foods.map((f, idx) => (
-              <li
-                key={idx}
-                style={{
-                  listStyle: "none",
-                  border: "1px solid #ddd",
-                  padding: 12,
-                  borderRadius: 8,
-                  background: "#fafafa",
-                }}
-              >
-                {f.image && (
-                  <img
-                    src={f.image}
-                    alt={f.name}
-                    style={{ width: "100%", borderRadius: 8 }}
-                  />
-                )}
-                <h3>{f.name}</h3>
-                <p style={{ fontSize: "0.9em", color: "#555" }}>
-                  {f.calories} kcal · 지방 {f.fat}g · 단백질 {f.protein}g
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <SearchSection
+        title="🍎 음식 추천"
+        keyword={foodKeyword}
+        setKeyword={setFoodKeyword}
+        onSearch={searchFoods}
+        suggestions={["snack", "chocolate", "pizza", "bread"]}
+        results={foods.map((f) => ({
+          image: f.image,
+          name: f.name,
+          subtitle: `${f.calories ?? "-"} kcal · 지방 ${f.fat ?? "-"}g · 단백질 ${f.protein ?? "-"}g`,
+        }))}
+      />
 
       {/* 칵테일 검색 */}
-      <section style={{ marginTop: 32 }}>
-        <h2>🍸 칵테일 추천</h2>
-        <div style={{ marginBottom: 12 }}>
-          <input
-            value={cocktailKeyword}
-            onChange={(e) => setCocktailKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchCocktails()}
+      <SearchSection
+        title="🍸 칵테일 추천"
+        keyword={cocktailKeyword}
+        setKeyword={setCocktailKeyword}
+        onSearch={searchCocktails}
+        suggestions={["Margarita", "Martini", "Mojito", "Cosmopolitan"]}
+        results={cocktails.map((c) => ({
+          image: c.image,
+          name: c.name,
+          subtitle: `${c.category} · ${c.alcohol}`,
+          description: c.instructions,
+        }))}
+      />
 
-            placeholder="칵테일 이름 입력 (예: Margarita, Mojito)"
-            style={{ padding: "8px", borderRadius: 6, border: "1px solid #ccc" }}
-          />
-          <button
-            onClick={() => searchCocktails()}
-            style={{
-              marginLeft: 8,
-              padding: "8px 12px",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            검색
-          </button>
-          {/* 추천 키워드 버튼 */}
-          <div style={{ marginTop: 8 }}>
-            {["Margarita", "Martini", "Mojito", "Cosmopolitan"].map((kw) => (
-              <button
-                key={kw}
-                onClick={() => {
-                  setCocktailKeyword(kw);
-                  searchCocktails(kw);
-                }}
-                style={{
-                  marginRight: 6,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  background: "#eee",
-                }}
-              >
-                {kw}
-              </button>
-            ))}
-          </div>
-        </div>
-        {cocktails.length === 0 ? (
-          <p>검색 결과 없음</p>
-        ) : (
-          <ul
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {cocktails.map((c, idx) => (
-              <li
-                key={idx}
-                style={{
-                  listStyle: "none",
-                  border: "1px solid #ddd",
-                  padding: 12,
-                  borderRadius: 8,
-                  background: "#fafafa",
-                }}
-              >
-                {c.image && (
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    style={{ width: "100%", borderRadius: 8 }}
-                  />
-                )}
-                <h3>{c.name}</h3>
-                <p style={{ fontSize: "0.9em", color: "#555" }}>
-                  {c.category} · {c.alcohol}
-                </p>
-                <p style={{ fontSize: "0.8em", color: "#777" }}>
-                  {c.instructions}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* 랜덤 칵테일 */}
+      {/* 랜덤 칵테일 모달 */}
       <section style={{ marginTop: 32 }}>
         <h2>🎲 랜덤 칵테일 추천</h2>
         <button
-          onClick={fetchRandomCocktail}
+          onClick={() => fetchRandomCocktails(4)} // 원하는 개수 지정
           style={{
             borderRadius: 6,
             padding: "8px 12px",
             marginBottom: 12,
-                    cursor: "pointer",
+            cursor: "pointer",
           }}
         >
           랜덤 칵테일 불러오기
         </button>
-        {randomCocktail && (
+
+        {randomCocktails.length > 0 && (
           <div
             style={{
-             
-              border: "1px solid #ddd",
-              padding: 12,
-              borderRadius: 8,
-              background: "#fafafa",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <img
-              src={randomCocktail.image}
-              alt={randomCocktail.name}
-              style={{ width: "20%", borderRadius: 8 }}
-            />
-            <h3>{randomCocktail.name}</h3>
-            <p style={{ fontSize: "0.9em", color: "#555" }}>
-              {randomCocktail.category} · {randomCocktail.alcohol}
-            </p>
-            <p style={{ fontSize: "0.8em", color: "#777" }}>
-              {randomCocktail.instructions}
-            </p>
+            <div style={{ background: "#fff", padding: 24, borderRadius: 12, maxWidth: "80%", position: "relative" }}>
+              {/* 닫기 버튼 X */}
+              <button
+                onClick={() => setRandomCocktails([])}
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  border: "none",
+                  background: "transparent",
+                  fontSize: "1.2em",
+                  cursor: "pointer",
+                }}
+              >
+                ✖
+              </button>
+
+              <h2 style={{ marginBottom: 16 }}>랜덤 칵테일 추천</h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: 16,
+                }}
+              >
+                {randomCocktails.map((c, idx) => (
+                 <div
+  key={idx}
+  style={{
+    border: "1px solid #ddd",
+    padding: 16,
+    borderRadius: 12,
+    background: "#fff",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    transition: "transform 0.2s, box-shadow 0.2s",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "translateY(-4px)";
+    e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.12)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+  }}
+>
+  <img
+    src={c.image}
+    alt={c.name}
+    style={{
+      width: "100%",
+      height: "180px",
+      objectFit: "cover",
+      borderRadius: 8,
+      marginBottom: 8,
+    }}
+  />
+  <h3 style={{ margin: "8px 0", fontWeight: 600 }}>{c.name}</h3>
+  <p style={{ fontSize: "0.9em", color: "#555" }}>{c.category} · {c.alcohol}</p>
+</div>
+
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </section>
